@@ -1,0 +1,13 @@
+data/
+private-data/
+*.rulespack
+.python-packages/
+tmp/
+tests/
+scripts/
+requirements.txt
+official-home.html
+*.hwp
+*.pdf
+*.log
+화면미리보기.png

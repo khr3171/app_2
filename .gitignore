@@ -1,0 +1,13 @@
+node_modules/
+.python-packages/
+.env
+.env.*
+!.env.example
+.vercel/
+official-home.html
+tmp/
+*.log
+data/
+private-data/
+*.rulespack
+화면미리보기.png
