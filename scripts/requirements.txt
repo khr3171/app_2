@@ -1,0 +1,5 @@
+# Local document ingestion tools only. Not a web-server runtime.
+pypdf>=5
+olefile==0.47
+pypdfium2>=4
+Pillow>=10

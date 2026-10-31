@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "npm ci",
   "outputDirectory": "public",
   "functions": {"api/index.mjs": {"maxDuration": 30}},
   "rewrites": [{"source":"/api/:route", "destination":"/api?route=:route"}],
