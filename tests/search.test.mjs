@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {search,documents} from '../lib/search.mjs';
+import handler from '../api/index.mjs';
+test('all five supplied documents are indexed',()=>{assert.equal(documents.length,5);assert.equal(documents[0].units,622);assert.ok(documents.every(d=>d.characters>4000));});
+test('review allowance cites verified tables and correct internal rule',()=>{const r=search('심사수당');assert.ok(r.internal.some(h=>h.page===221&&h.ruleTitle==='위원회 관리 규정'));assert.ok(r.internal.some(h=>h.page===376));assert.equal(r.answer.facts[1].value,'100,000원');assert.ok(r.answer.scope.includes('서면'));});
+test('fiscal years do not mix guidelines',()=>{for(const year of [2026,2027]){const r=search('업무추진비',{year});assert.ok(r.external.some(h=>h.document.year===year));assert.ok(r.external.every(h=>!h.document.year||h.document.year===year));}});
+test('missing results do not invent evidence',()=>{const r=search('존재하지않는검색어xyz');assert.equal(r.missing,true);assert.equal(r.answer,null);assert.equal(r.total,0);});
+test('ordinances in compilation are not internal rules',()=>{assert.ok(search('사회서비스원 설립').internal.every(h=>!h.ruleTitle?.includes('조례')));});
+test('invalid queries rejected',()=>{assert.throws(()=>search(''));assert.throws(()=>search('가'.repeat(201)));});
+test('production refuses unauthenticated document access',async()=>{const old=process.env.LOCAL_PREVIEW;delete process.env.LOCAL_PREVIEW;let body;const res={setHeader(){},end(v){body=v;}};await handler({url:'/api/source?id=doc-1',method:'GET',headers:{}},res);assert.ok([401,503].includes(res.statusCode));assert.ok(String(body).includes('error'));if(old)process.env.LOCAL_PREVIEW=old;});
