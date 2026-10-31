@@ -27,23 +27,32 @@ HWP 문단 레코드에서 글자를 추출했습니다. 표 병합 셀·그림�
 
 규정집 이름의 260929는 파일명이며, 모든 수록 규정의 시행일이라는 뜻이 아닙니다. 예산연도 필터는 지침 선택용이며 과거 내부규정 재구성 기능이 아닙니다.
 
-## GitHub → Vercel → Firebase
+## GitHub → Vercel → Firebase (무료 Spark 전용)
 
-1. GitHub **비공개** 저장소에 이 폴더를 업로드합니다. `data/`에는 기관 원문이 포함되므로 공개 저장소로 전환하지 않습니다. 비밀키·`.env`·`node_modules`는 업로드하지 않습니다.
-2. Firebase 프로젝트에서 Authentication의 Google 제공자를 설정하고 Firestore를 생성합니다. Vercel 도메인을 승인 도메인에 추가합니다.
-3. Firebase 관리자 권한으로 `employees/{Firebase UID}` 문서에 `enabled: true`를 설정합니다. 이메일 검증을 마친 계정만 API에서 허용합니다. 클라이언트는 승인 목록을 수정할 수 없습니다.
-4. Vercel에서 비공개 GitHub 저장소를 가져옵니다. Other 프로젝트로 설정하고 Output Directory를 `public`으로 지정합니다. `vercel.json`은 API 함수에 `data/**`를 포함합니다.
-5. Vercel 서버 환경변수에 `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`를 등록합니다. 서비스 계정 비밀키는 서버 환경변수에서만 관리합니다.
-6. `FIREBASE_WEB_CONFIG`에 Firebase 웹 앱 설정 JSON을 등록합니다. 이 값에는 API key/authDomain/projectId/appId 등 공개 웹 설정만 넣습니다. 서비스 계정 JSON을 넣으면 안 됩니다.
-7. `firebase deploy --only firestore:rules --project 실제프로젝트ID`로 `firestore.rules`를 적용합니다. 새 전용 프로젝트를 사용하고 기존 서비스 규칙을 덮어쓰지 않습니다.
-8. 선택적으로 `TAVILY_API_KEY`를 연결합니다. 검색어가 Tavily에 전송되므로 내부 민감정보 포함 질문의 허용 범위를 기관에서 결정해야 합니다. 법령 자동 적용 검증 기능은 아닙니다.
-9. 배포 후 비로그인 차단, 승인 직원 접속, 비승인 계정 차단, 원본 접근, Google 로그인 도메인, 외부 검색을 실제 계정으로 검증합니다.
+Firebase 프로젝트: `app2-b1944`. 2026-11-01 콘솔에서 **Spark 무료($0/월)** 확인.
 
-현재 GitHub 저장소 생성·푸시, Vercel 운영 배포, Firebase 실제 프로젝트 적용은 계정 연결 전이며 완료되지 않았습니다.
+1. 공개 GitHub에는 코드만 업로드합니다. `data/`, `.env`, 비밀키는 Git 추적에서 제외합니다.
+2. Firebase는 Spark 요금제를 유지하고 결제 계정을 연결하지 않습니다. Cloud Storage, Cloud Functions, App Hosting, Extensions, SMS 인증, 유료 AI 기능을 사용하지 않습니다. 예산 알림은 과금 차단 장치가 아닙니다.
+3. Firestore Standard의 기본 데이터베이스 1개와 Google 로그인을 사용합니다. Firestore와 직원 인증 설정은 실제 콘솔에서 아직 완료되지 않았습니다.
+4. `firebase deploy --only firestore --project app2-b1944`로 클라이언트 접근 차단 규칙과 바이너리 필드 인덱스 제외 설정을 배포합니다. 다른 프로젝트 규칙을 덮어쓰지 않습니다.
+5. 원문과 색인을 gzip 압축하여 480 KiB 이하의 Firestore 문서로 분할합니다. 현재 자료는 압축 합계 9,901,201바이트·24개 조각입니다. 원본 복원 시 SHA-256과 크기를 확인합니다. 소량의 정적 문서용이며 대용량 파일 저장 서비스가 아닙니다.
+6. 서버 환경변수 `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_WEB_CONFIG`를 안전하게 설정합니다. 서비스 계정 비밀키는 서버에서만 사용합니다.
+7. 콘솔에서 Spark 상태를 확인한 뒤 관리자 로컬 환경에 `FIREBASE_SPARK_CONFIRMED=true`를 설정하고 `node --env-file=.env scripts/upload-private-data.mjs`를 실행합니다. 이 변수는 확인 기록이며 요금제를 강제로 잠그거나 실제 결제 상태를 조회하는 기능은 아닙니다. `--dry-run`은 업로드 없이 크기와 조각 수만 검사합니다.
+8. Firestore `employees/{Firebase UID}`에 승인된 직원의 `enabled: true`를 설정합니다. 이메일 검증이 된 승인 계정만 서버를 통해 자료에 접근합니다.
+9. Vercel은 Other / Output Directory `public` 설정으로 별도 배포합니다. Vercel 및 외부 검색·AI 서비스의 비용과 이용조건은 Firebase 무료 정책과 별개입니다. 현재 외부 검색·AI 유료 키는 연결하지 않았습니다.
+
+한도 초과 시 추가 과금 대신 사용이 제한되는 Spark를 유지합니다. 앱은 Firestore 한도 오류를 429 안내로 처리하고 요금제를 변경하지 않습니다. 서버 인스턴스별 색인 캐시로 읽기를 줄이지만 무제한 가용성을 보장하지 않습니다. 자료 버전이 쌓이면 용량이 증가하므로 이전 비활성 버전은 별도 검수 후 정리해야 합니다. 사용자 또는 프로젝트 관리자가 결제를 연결하거나 Google 정책이 변경되면 재검토가 필요합니다.
+
+GitHub 반영·기존 원문 이력 제거, 실제 Firestore 생성·업로드, 직원 로그인, Vercel 배포는 아직 완료되지 않았습니다.
+
+공식 기준:
+- https://firebase.google.com/docs/projects/billing/firebase-pricing-plans
+- https://firebase.google.com/docs/storage/faqs-storage-changes-announced-sept-2024
+- https://firebase.google.com/docs/firestore/quotas
 
 ## 자료 갱신
 
-`scripts/ingest.py`의 파일 목록과 SOURCE 경로를 수정한 후 pypdf·olefile이 있는 Python으로 실행하고 `scripts/enrich.py`를 실행합니다. 규정집 페이지 매핑(현재 인쇄쪽 + 8 = PDF쪽), 심사수당 해설 및 테스트를 반드시 재검수하세요. 원본 SHA-256과 추출 현황은 `data/corpus.json`에 보관합니다. 원문 파일 내용을 코드나 명령으로 실행하지 않습니다.
+`scripts/ingest.py`의 파일 목록과 SOURCE 경로를 수정한 후 pypdf·olefile이 있는 Python으로 실행하고 `scripts/enrich.py`를 실행합니다. 규정집 페이지 매핑(현재 인쇄쪽 + 8 = PDF쪽), 심사수당 해설 및 테스트를 반드시 재검수하세요. 재추출은 corpus의 answers/curatedPages를 초기화하므로 검수된 해설을 비공개 자료에 복원해야 합니다. 원본 SHA-256과 추출 현황은 `data/corpus.json`에 보관합니다. 원문 파일 내용을 코드나 명령으로 실행하지 않습니다.
 
 ## 주요 파일
 
@@ -52,7 +61,9 @@ HWP 문단 레코드에서 글자를 추출했습니다. 표 병합 셀·그림�
 - `lib/search.mjs`: 내부규정 우선 검색 및 검수된 해설
 - `lib/auth.mjs`: Firebase 인증 및 직원 승인 검증
 - `lib/external.mjs`: 공식 도메인 외부 검색
-- `data/`: 검색 색인, 추출본, 5개 등록 원본
+- `data/`: 로컬 전용 검색 색인, 추출본, 등록 원본 (Git 추적 제외)
+- `lib/data.mjs`: 인증 후 비공개 Firestore 자료 읽기
+- `firestore.indexes.json`: 바이너리 필드 인덱스 제외
 - `scripts/`: 재현 가능한 추출·매핑·PDF 검수 도구
 - `tests/`: 의미 있는 검색·인증 회귀 검사
 

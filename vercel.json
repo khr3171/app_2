@@ -1,7 +1,7 @@
 {
   "version": 2,
   "outputDirectory": "public",
-  "functions": {"api/index.mjs": {"includeFiles": "data/**", "maxDuration": 30}},
+  "functions": {"api/index.mjs": {"maxDuration": 30}},
   "rewrites": [{"source":"/api/:route", "destination":"/api?route=:route"}],
   "headers": [{"source":"/(.*)","headers":[{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Referrer-Policy","value":"same-origin"},{"key":"X-Frame-Options","value":"DENY"}]}]
 }
