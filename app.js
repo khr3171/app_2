@@ -1,310 +1,35 @@
-// State Management
-let currentKeyword = "";
-let currentRules = [...RULES_DATA];
-
-// DOM elements
-const searchInput = document.getElementById("searchInput");
-const clearBtn = document.getElementById("clearBtn");
-const ruleList = document.getElementById("ruleList");
-const noResults = document.getElementById("noResults");
-const resultCountBadge = document.getElementById("resultCountBadge");
-const searchKeywordLabel = document.getElementById("searchKeywordLabel");
-const aisDirectAnswer = document.getElementById("aisDirectAnswer");
-
-// Initialize on Load
-document.addEventListener("DOMContentLoaded", () => {
-  renderRules(currentRules);
-  lucide.createIcons();
-});
-
-// Search handling
-function handleSearch() {
-  const query = searchInput.value.trim().toLowerCase();
-  currentKeyword = query;
-
-  if (query === "") {
-    clearBtn.classList.add("hidden");
-    currentRules = [...RULES_DATA];
-    searchKeywordLabel.textContent = "전체 규정 목록";
-    aisDirectAnswer.classList.add("hidden");
-  } else {
-    clearBtn.classList.remove("hidden");
-    searchKeywordLabel.innerHTML = `'<span class="text-blue-600">${escapeHtml(query)}</span>' 검색 결과`;
-    
-    // Check if query is related to '심사' or '수당' for AIS Direct Answer Banner
-    if (query.includes("심사") || query.includes("수당") || query.includes("2시간") || query.includes("10만")) {
-      aisDirectAnswer.classList.remove("hidden");
-    } else {
-      aisDirectAnswer.classList.add("hidden");
-    }
-
-    currentRules = RULES_DATA.filter(item => {
-      const matchLaw = item.lawName.toLowerCase().includes(query);
-      const matchArticle = item.article.toLowerCase().includes(query);
-      const matchSummary = item.summary.toLowerCase().includes(query);
-      const matchContent = item.content.toLowerCase().includes(query);
-      const matchCategory = item.category.toLowerCase().includes(query);
-      
-      const matchCases = item.practicalExamples && item.practicalExamples.some(ex => 
-        ex.caseTitle.toLowerCase().includes(query) ||
-        ex.condition.toLowerCase().includes(query) ||
-        ex.result.toLowerCase().includes(query)
-      );
-
-      return matchLaw || matchArticle || matchSummary || matchContent || matchCategory || matchCases;
-    });
-  }
-
-  renderRules(currentRules);
+import {historyStore} from './recent-searches.js';
+import {reviewHTML} from './review.js';
+import {publicRequest} from './public-data.js';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let sequence=0,lastResult,pendingJump=false;
+const request=publicRequest;
+function modal(title,html){$('#dialog-title').textContent=title;$('#dialog-body').innerHTML=html;$('#dialog').showModal();}
+$('#close-dialog').onclick=()=>$('#dialog').close();
+$('#dialog').addEventListener('click',e=>{if(e.target===$('#dialog'))$('#dialog').close();});
+function highlighted(text,terms=[]){let result=esc(text);const unique=[...new Set(terms)].filter(t=>t.length>=2).sort((a,b)=>b.length-a.length);if(!unique.length)return result;const pattern=unique.map(t=>esc(t).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');return result.replace(new RegExp(pattern,'gi'),m=>'<mark>'+m+'</mark>');}
+function snippet(hit){const text=hit.text;const p=text.toLowerCase().indexOf(lastResult.query.toLowerCase());return text.slice(Math.max(0,p-120),Math.max(0,p-120)+380).trim();}
+function card(hit,external=false){
+ const title=hit.ruleTitle||hit.document.name;
+ const article=hit.articles?.slice(0,3).join(' · ')||'별표·본문 관련 구간';
+ return `<article class="source-card"><div class="source-meta"><span class="tag ${external?'ref':''}">${external?'참고자료':hit.direct?'관련 내부규정':'간접 관련 내부규정'}</span><span>${esc(hit.location)}${hit.printedPage?' · 인쇄 '+hit.printedPage+'쪽':''}</span></div><h3>${esc(title)}<br><span class="muted">${esc(article)}</span></h3><div class="excerpt">${highlighted(snippet(hit),hit.terms)}</div><details><summary>조문·표 추출 원문 펼치기</summary><div class="full-text">${highlighted(hit.text,hit.terms)}</div></details><div class="source-meta">시행일: ${esc(hit.effective||hit.document.effective||'원문 부칙 확인 필요')}</div>${external?'<p class="disclaimer">본 조항은 관련 업무의 참고자료로 제공되며, 부산광역시사회서비스원에 직접 적용되는지 여부는 별도 확인이 필요합니다.</p><p class="muted">관계: 업로드 자료의 관련 구간 · 직접 적용 또는 명시적 준용의 개별 근거 미확인<br>공식 웹 원문 링크: 미확인 · 아래 등록 원본으로 확인</p>':''}<div class="source-actions"><button data-source="${hit.docId}" data-page="${hit.page||''}">등록 원본 ${hit.page?'해당 페이지 ':''}열기 ↗</button><span class="muted">${esc(hit.kind==='manual'?'기관 업무 매뉴얼':'원문 추출본')}</span></div></article>`;
 }
-
-// Quick Search from tags
-function quickSearch(keyword) {
-  searchInput.value = keyword;
-  handleSearch();
+function answerHTML(a){return `<div class="answer"><span class="tag">원문 대조 해설</span><h3>${esc(a.title)}</h3><p>${esc(a.scope)}</p><div class="facts">${a.facts.map(f=>`<div class="fact"><label>${esc(f.label)}</label><strong>${esc(f.value)}</strong><small>${esc(f.unit)}</small></div>`).join('')}</div>${a.paragraphs.map(p=>`<p>${esc(p)}</p>`).join('')}<div class="calc"><label for="count">서면심사 안건 수</label><input id="count" type="number" value="1" min="1" max="10000" step="1"><output id="amount" aria-live="polite">${Number(a.calculator?.rate||0).toLocaleString()}원</output><small>기본 기준 단순 계산 · 지급 자격 별도 확인</small></div><p class="muted">근거 바로가기</p><div class="refs">${a.references.map(r=>`<button data-source="doc-1" data-page="${r.page}">${esc(r.title)} ↗</button>`).join('')}</div></div>`;}
+function render(data){lastResult=data;const a=data.answer;
+ $('#results').innerHTML=`<div class="result-top"><h2>‘${esc(data.query)}’ 검색 결과</h2><span class="muted">${data.year}년 예산 기준 · 원문 근거 검색</span></div><div class="policy">${esc(data.notice)}</div><div class="section-label">01 사서원 규정 <span>우선 검색</span></div>${a?answerHTML(a):data.missing?'<div class="empty">현재 등록된 사서원 내부규정에서 해당 사항을 직접 정한 조항을 확인하지 못했습니다.<br><span class="muted">검색 결과가 없다는 것이 규정의 부재를 뜻하지 않습니다. 다른 업무명·유사어로 다시 검색해 보세요.</span></div>':'<div class="policy">관련 원문 구간을 찾았습니다. 아래 규정명·조문 및 별표를 먼저 확인하세요. 이 검색어의 검수된 해설은 아직 등록되지 않아 원문 근거를 제공합니다.</div>'}<div class="section-label">02 사서원 관련 규정 원문 <span>${data.internal.length}개 구간</span></div>${data.internal.map(h=>card(h)).join('')}<details class="external"><summary>03 관련 법령·지침 참고 <span>내부규정과 구분하여 확인</span></summary><p class="policy">${esc(data.web.message)}</p>${data.external.length?data.external.map(h=>card(h,true)).join(''):'<p class="muted">등록된 외부 자료에서 관련 구간을 확인하지 못했습니다.</p>'}${data.web.items.map(w=>`<article class="source-card"><span class="tag ref">참고자료</span><h3><a href="${esc(w.url)}" target="_blank" rel="noopener noreferrer">${esc(w.title)} ↗</a></h3><p>${esc(w.content)}</p><p class="muted">조문번호·시행일: 공식 원문 확인 필요<br>${esc(w.relationship)}</p><p class="disclaimer">본 조항은 관련 업무의 참고자료로 제공되며, 부산광역시사회서비스원에 직접 적용되는지 여부는 별도 확인이 필요합니다.</p></article>`).join('')}</details><div class="notes"><h3>04 종합 검토 및 실무 유의사항</h3><ul>${(a?.cautions||['확인된 내부규정 원문을 우선 검토하고, 직접 적용 법령 또는 준용 근거가 확인된 외부 자료를 함께 검토하세요.','검수되지 않은 금액·예외 조건을 추정하지 않습니다. 표의 단위와 적용대상은 등록 원본에서 확인하세요.']).map(t=>`<li>${esc(t)}</li>`).join('')}<li>PDF·HWP에서 추출한 텍스트입니다. 이미지와 표 병합 셀은 누락되거나 순서가 달라질 수 있습니다. 시행일과 최신 개정 여부를 확인하세요.</li><li>${esc(data.web.message)} 법령 충돌 검토가 완료되었다는 의미가 아닙니다.</li></ul></div>`;
+ $('#results').insertAdjacentHTML('beforeend',reviewHTML(data,esc));
+ $('#results').hidden=false;
+ if($('#count'))$('#count').oninput=()=>{const n=Number($('#count').value);$('#amount').textContent=Number.isInteger(n)&&n>=1&&n<=10000?Math.min(n*Number(lastResult.answer.calculator.rate),Number(lastResult.answer.calculator.maximum)).toLocaleString()+'원':'1~10,000의 정수를 입력하세요';};
 }
-
-// Clear Search
-function clearSearch() {
-  searchInput.value = "";
-  handleSearch();
-  searchInput.focus();
-}
-
-// Reset Search to all
-function resetSearch() {
-  searchInput.value = "";
-  handleSearch();
-}
-
-// Highlight text helper
-function highlightText(text, keyword) {
-  if (!keyword || !text) return text;
-  const regex = new RegExp(`(${escapeRegExp(keyword)})`, "gi");
-  return text.replace(regex, `<mark>$1</mark>`);
-}
-
-function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function escapeHtml(string) {
-  return string.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-// Render rules into structured, clean accordion cards (Argos & AIS Style)
-function renderRules(rules) {
-  resultCountBadge.textContent = `${rules.length}건`;
-
-  if (rules.length === 0) {
-    ruleList.innerHTML = "";
-    noResults.classList.remove("hidden");
-    return;
-  }
-
-  noResults.classList.add("hidden");
-
-  ruleList.innerHTML = rules.map((rule, idx) => {
-    const isFirstCard = (idx === 0 && currentKeyword !== ""); // auto expand first result on search
-    
-    // Practical cases HTML
-    const casesHtml = (rule.practicalExamples || []).map((ex, exIdx) => `
-      <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 space-y-1.5 transition hover:bg-blue-50">
-        <div class="flex items-center justify-between flex-wrap gap-1">
-          <div class="flex items-center gap-1.5">
-            <span class="inline-flex items-center justify-center w-5 h-5 text-[11px] font-bold bg-blue-600 text-white rounded-full">${exIdx + 1}</span>
-            <span class="font-bold text-slate-800 text-sm">${highlightText(ex.caseTitle, currentKeyword)}</span>
-          </div>
-          <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">적용 기준</span>
-        </div>
-        <div class="text-xs text-slate-600 pl-6 space-y-0.5">
-          <p><span class="font-semibold text-slate-700">상황 조건:</span> ${highlightText(ex.condition, currentKeyword)}</p>
-          <p><span class="font-semibold text-blue-700">지급/처리:</span> <strong class="text-blue-900">${highlightText(ex.result, currentKeyword)}</strong></p>
-          ${ex.docs ? `<p class="text-slate-500 text-[11px]"><span class="font-semibold">구비 서류:</span> ${ex.docs}</p>` : ''}
-        </div>
-      </div>
-    `).join("");
-
-    return `
-      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 hover:border-blue-400 hover:shadow-md" id="card-${rule.id}">
-        
-        <!-- CARD HEADER / SUMMARY ROW -->
-        <div 
-          onclick="toggleAccordion('${rule.id}')"
-          class="p-5 cursor-pointer flex items-start justify-between gap-4 select-none bg-white hover:bg-slate-50/80 transition"
-        >
-          <div class="space-y-1.5 flex-1">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                ${rule.category}
-              </span>
-              <span class="text-xs font-semibold text-blue-600">
-                ${highlightText(rule.lawName, currentKeyword)}
-              </span>
-            </div>
-
-            <!-- Article & Clause Title -->
-            <div class="flex items-baseline gap-2 pt-0.5">
-              <h2 class="text-lg font-extrabold text-slate-900 hover:text-blue-600 transition flex items-center gap-2">
-                <span>${highlightText(rule.article, currentKeyword)}</span>
-                <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${rule.clause}</span>
-              </h2>
-            </div>
-
-            <!-- One-line Summary -->
-            <p class="text-xs sm:text-sm text-slate-600 leading-normal line-clamp-1">
-              ${highlightText(rule.summary, currentKeyword)}
-            </p>
-          </div>
-
-          <!-- Toggle Indicator Button -->
-          <div class="shrink-0 flex items-center gap-2 pt-1 text-slate-400">
-            <span class="text-xs font-medium text-blue-600 hidden sm:inline" id="badge-label-${rule.id}">${isFirstCard ? '원문 접기' : '원문·사례 펼치기'}</span>
-            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center transition-transform duration-200" id="icon-container-${rule.id}">
-              <i data-lucide="${isFirstCard ? 'chevron-up' : 'chevron-down'}" class="w-4 h-4 text-slate-600" id="icon-${rule.id}"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- ACCORDION CONTENT -->
-        <div id="content-${rule.id}" class="${isFirstCard ? 'block' : 'hidden'} border-t border-slate-100 bg-slate-50/60 p-5 sm:p-6 space-y-6">
-          
-          <!-- SECTION 1: AIS PRACTICAL EXAMPLES -->
-          <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="p-1.5 bg-blue-100 text-blue-700 rounded-lg">
-                  <i data-lucide="briefcase" class="w-4 h-4"></i>
-                </div>
-                <h3 class="font-bold text-slate-800 text-sm sm:text-base">
-                  실무 적용 가상 사례 (AIS형 해석 가이드)
-                </h3>
-              </div>
-              <span class="text-xs text-slate-400 hidden sm:inline">현장 집행 기준</span>
-            </div>
-
-            <!-- Example Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-              ${casesHtml}
-            </div>
-          </div>
-
-          <!-- SECTION 2: REGULATION ORIGINAL TEXT -->
-          <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div class="flex items-center gap-2">
-                <div class="p-1.5 bg-slate-100 text-slate-700 rounded-lg">
-                  <i data-lucide="scroll-text" class="w-4 h-4"></i>
-                </div>
-                <h3 class="font-bold text-slate-800 text-sm sm:text-base">
-                  규정 조항 원문
-                </h3>
-              </div>
-              <button 
-                onclick="copyText('${escapeHtml(rule.content).replace(/\n/g, ' ')}')" 
-                class="text-xs text-slate-500 hover:text-blue-600 flex items-center gap-1 font-medium bg-slate-100 px-2 py-1 rounded transition"
-              >
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                <span>원문 복사</span>
-              </button>
-            </div>
-
-            <div class="bg-slate-50 p-4 rounded-lg font-mono text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line border border-slate-200/70">
-              ${highlightText(rule.content, currentKeyword)}
-            </div>
-          </div>
-
-          <!-- Action Footer inside Card -->
-          <div class="flex justify-between items-center text-xs text-slate-400 pt-1">
-            <span>최종 개정 기준 준용</span>
-            <button onclick="toggleAccordion('${rule.id}')" class="text-slate-500 hover:text-slate-800 font-medium">
-              ▲ 조항 닫기
-            </button>
-          </div>
-
-        </div>
-
-      </div>
-    `;
-  }).join("");
-
-  lucide.createIcons();
-}
-
-// Accordion toggle function
-function toggleAccordion(id) {
-  const content = document.getElementById(`content-${id}`);
-  const icon = document.getElementById(`icon-${id}`);
-  const badgeLabel = document.getElementById(`badge-label-${id}`);
-
-  if (content.classList.contains("hidden")) {
-    content.classList.remove("hidden");
-    if (badgeLabel) badgeLabel.textContent = "원문 접기";
-    if (icon) {
-      icon.setAttribute("data-lucide", "chevron-up");
-      lucide.createIcons();
-    }
-  } else {
-    content.classList.add("hidden");
-    if (badgeLabel) badgeLabel.textContent = "원문·사례 펼치기";
-    if (icon) {
-      icon.setAttribute("data-lucide", "chevron-down");
-      lucide.createIcons();
-    }
-  }
-}
-
-// Copy to clipboard
-function copyText(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert("규정 원문이 클립보드에 복사되었습니다.");
-  }).catch(() => {
-    alert("복사에 실패했습니다.");
-  });
-}
-
-// Calculator modal functions
-function openCalcModal() {
-  document.getElementById("calcModal").classList.remove("hidden");
-  setCalcHours(2);
-}
-
-function closeCalcModal() {
-  document.getElementById("calcModal").classList.add("hidden");
-}
-
-function setCalcHours(hours) {
-  const buttons = document.querySelectorAll(".calc-btn");
-  buttons.forEach(btn => {
-    if (parseInt(btn.getAttribute("data-hours")) === hours) {
-      btn.classList.add("bg-blue-600", "text-white", "border-blue-600");
-      btn.classList.remove("border-slate-200", "text-slate-700");
-    } else {
-      btn.classList.remove("bg-blue-600", "text-white", "border-blue-600");
-      btn.classList.add("border-slate-200", "text-slate-700");
-    }
-  });
-
-  const hoursText = document.getElementById("selectedHoursText");
-  const formulaText = document.getElementById("calcFormulaText");
-  const totalAmount = document.getElementById("calcTotalAmount");
-
-  if (hours <= 2) {
-    hoursText.textContent = `${hours}시간`;
-    formulaText.textContent = "기본 수당 정액 적용 (2시간 이내 100,000원)";
-    totalAmount.textContent = "100,000원";
-  } else if (hours === 3) {
-    hoursText.textContent = "3시간";
-    formulaText.textContent = "기본 100,000원 + 초과 1시간(50,000원)";
-    totalAmount.textContent = "150,000원";
-  } else {
-    hoursText.textContent = "4시간 이상";
-    formulaText.textContent = "기본 100,000원 + 초과 가산 (1일 최대 한도 200,000원 적용)";
-    totalAmount.textContent = "200,000원 (최대한도)";
-  }
-}
-
-function applyCalcResultToSearch() {
-  closeCalcModal();
-  quickSearch("심사수당");
-}
+async function doSearch(){const q=$('#query').value.trim();if(!q)return;const seq=++sequence;document.body.classList.add('has-results');$('#results').hidden=true;$('#status').textContent='내부규정과 관련 지침을 찾고 있습니다…';$('#search-form').classList.add('busy');try{const data=await(await request('search?q='+encodeURIComponent(q)+'&year='+$('#year').value)).json();if(seq!==sequence)return;render(data);paintHistory(historyStore.save(q,Number($('#year').value)));$('#status').textContent='';if(pendingJump){pendingJump=false;requestAnimationFrame(()=>{const panel=$('#final-review');panel?.setAttribute('tabindex','-1');panel?.focus({preventScroll:true});panel?.scrollIntoView({behavior:'smooth',block:'start'});});}history.replaceState(null,'','?q='+encodeURIComponent(q)+'&year='+$('#year').value);}catch(e){if(seq===sequence)$('#status').textContent=e.message;}finally{if(seq===sequence)$('#search-form').classList.remove('busy');}}
+$('#search-form').onsubmit=e=>{e.preventDefault();doSearch();};
+$('#query').oninput=()=>{$('#clear').hidden=!$('#query').value;};
+$('#clear').onclick=()=>{$('#query').value='';$('#clear').hidden=true;$('#query').focus();};
+$('#year').onchange=()=>{if(document.body.classList.contains('has-results'))doSearch();};
+document.addEventListener('click',async e=>{const suggested=e.target.closest('[data-query]');if(suggested){pendingJump=suggested.dataset.jump==='review';if(suggested.dataset.year)$('#year').value=suggested.dataset.year;$('#query').value=suggested.dataset.query;$('#clear').hidden=false;doSearch();}const source=e.target.closest('[data-source]');if(source){const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;try{const blob=await(await request('source?id='+encodeURIComponent(source.dataset.source))).blob();const url=URL.createObjectURL(blob);if(tab)tab.location.href=url+(source.dataset.page?'#page='+source.dataset.page:'');else{URL.revokeObjectURL(url);throw new Error('새 창 열기를 허용하고 다시 시도해주세요.');}setTimeout(()=>URL.revokeObjectURL(url),300000);}catch(err){tab?.close();$('#status').textContent=err.message;}}});
+$('#library').onclick=async()=>{try{const data=await(await request('documents')).json();modal('등록 자료 · 추출 현황',`<p class="help">5개 자료의 원문을 검색합니다. ‘학습 완료’는 원문 전체의 검수 완료를 뜻하지 않습니다.</p>${data.documents.map(d=>`<div class="doc-item"><b>${esc(d.name)}</b><br><span class="muted">${d.units}개 페이지/구역 · ${d.characters.toLocaleString()}자<br>${esc(d.extraction)}<br>텍스트가 적은 페이지/구역: ${d.emptyUnits.length}개${d.emptyUnits.length?' · '+esc(d.emptyUnits.join(', ')):''}</span><br><button data-source="${d.id}">등록 원본 열기 ↗</button></div>`).join('')}<div class="help"><h3>추출 검수 상태</h3>${data.quality.notes.map(t=>`<p>${esc(t)}</p>`).join('')}</div>`);}catch(e){modal('등록 자료',`<p class="help">${esc(e.message)}</p>`);}};
+$('#about').onclick=()=>modal('규정사전 이용 안내',`<div class="help"><p>부산광역시사회서비스원 직원의 내부 행정업무를 지원합니다. 내부규정 → 직접 적용·명시적 준용 법령 → 참고자료 순으로 검토하는 것을 원칙으로 합니다.</p><p>현재는 첨부 자료의 원문 검색과 검수된 심사수당 해설을 제공합니다. 생성형 AI 답변 및 모든 법령의 자동 적용 판단 기능은 연결되지 않았습니다.</p><p>직접 적용·명시적 준용 표시는 개별 근거가 검증된 경우에만 사용합니다. 미검증 자료는 참고자료로 표시하며 법령 충돌이 없다고 보장하지 않습니다.</p><p>예산 기준연도는 해당 연도의 지침을 고르는 기능이며, 그 날짜에 유효했던 내부규정을 재구성하는 기능은 아닙니다.</p><p>현재 등록본: 규정집(260929), 2026·2027 예산편성지침, 강사수당·원고료 기준, 사업비 결의서 매뉴얼.</p></div>`);
+function paintHistory(items=historyStore.read()){$('#recent-list').innerHTML=items.length?items.map(x=>'<li><button data-query="'+esc(x.query)+'" data-year="'+x.year+'"><span>'+esc(x.query)+'</span><small>'+x.year+'년 ↗</small></button></li>').join(''):'<li class="history-empty">검색한 업무가 여기에 표시됩니다.</li>';}
+$('#clear-history').onclick=()=>{historyStore.clear();paintHistory();};paintHistory();
+const params=new URLSearchParams(location.search);if(params.get('q')){$('#query').value=params.get('q');if(['2026','2027'].includes(params.get('year')))$('#year').value=params.get('year');await doSearch();}
