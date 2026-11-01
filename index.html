@@ -3,280 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>사서원 규정·실무 지식포털 (Smart Rule Guide)</title>
-  <!-- Tailwind CSS -->
+  <title>부산광역시사회서비스원 규정실무 헬퍼</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Google Korean Font: Pretendard -->
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'],
-          },
-          colors: {
-            argos: {
-              navy: '#0E294B',
-              blue: '#1A56DB',
-              lightBlue: '#EBF5FF',
-              sky: '#F0F5FA',
-              point: '#E02424',
-              grayBg: '#F8FAFC',
-              border: '#E2E8F0',
-              textDark: '#1E293B',
-              textMuted: '#64748B'
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: 'Pretendard', sans-serif; background-color: #F8FAFC; }
-    mark { background-color: #FEF08A; color: #854D0E; padding: 2px 4px; border-radius: 4px; font-weight: 600; }
-    .accordion-content { transition: max-height 0.3s cubic-bezier(0, 1, 0, 1); }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    }
   </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
-  <!-- TOP HEADER (Argos / AIS Inspired) -->
-  <header class="bg-[#0E294B] text-white border-b border-blue-900 sticky top-0 z-40 shadow-sm">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="resetSearch()">
-        <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-inner">
-          <i data-lucide="scale" class="w-5 h-5"></i>
+  <!-- 상단 헤더: 기관 로고 및 명칭 강조 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- 좌측: 부산광역시사회서비스원 CI 심볼 및 텍스트 로고 -->
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-sky-500 flex items-center justify-center shadow-md shadow-teal-500/10 group-hover:scale-105 transition-transform">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
         </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <span class="font-bold text-lg tracking-tight text-white">사서원 규정실무 헬퍼</span>
-            <span class="text-xs bg-blue-500/30 text-blue-200 border border-blue-400/40 px-2 py-0.5 rounded-full font-medium">AIS 가이드형</span>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded">공공기관</span>
+            <span class="text-xs text-slate-400 font-medium tracking-tight">BUSAN SOCIAL SERVICE AGENCY</span>
           </div>
-          <p class="text-[11px] text-blue-200/80 -mt-0.5 hidden sm:block">사회서비스원 규정 검색 및 실무 상황 적용 시뮬레이터</p>
+          <span class="text-lg font-extrabold text-slate-900 tracking-tight group-hover:text-teal-600 transition-colors">
+            부산광역시사회서비스원 <span class="font-normal text-slate-500 text-sm ml-1">규정실무 헬퍼</span>
+          </span>
         </div>
-      </div>
+      </a>
 
-      <div class="flex items-center space-x-3 text-xs sm:text-sm">
-        <a href="https://www.law.go.kr" target="_blank" class="text-slate-300 hover:text-white flex items-center gap-1 transition px-2.5 py-1.5 rounded-md hover:bg-white/10">
-          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-          <span class="hidden md:inline">국가법령정보센터</span>
+      <!-- 우측 보조 링크 버튼 -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="https://www.law.go.kr" target="_blank" class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-teal-600 bg-slate-100 hover:bg-slate-200/80 px-3 py-2 rounded-lg transition-colors">
+          <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+          국가법령정보센터
         </a>
-        <button onclick="openCalcModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition">
-          <i data-lucide="calculator" class="w-4 h-4"></i>
-          <span>수당 간편계산기</span>
+        <button id="calc-btn" class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 px-3.5 py-2 rounded-lg shadow-sm transition-colors">
+          <i class="fa-solid fa-calculator text-[11px]"></i>
+          수당 간편계산기
         </button>
       </div>
     </div>
   </header>
 
-  <!-- HERO SEARCH SECTION -->
-  <section class="bg-gradient-to-b from-[#0E294B] via-[#16365C] to-[#1E4370] text-white pt-8 pb-12 px-4 sm:px-6 shadow-inner">
-    <div class="max-w-4xl mx-auto text-center space-y-4">
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-400/20 text-blue-200 border border-blue-300/20">
-        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-yellow-300"></i> 규정 원문 + 실무 적용 가이드(AIS) 원스톱 안내
-      </span>
-      <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">
+  <!-- 메인 히어로 섹션 (요청하신 안내 설명 문구 완전 삭제, 검색창 집중형 레이아웃) -->
+  <section class="bg-white border-b border-slate-200/80 py-12 sm:py-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+      
+      <!-- 핵심 배지 -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold mb-4">
+        <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+        사서원 실무 규정 원스톱 가이드
+      </div>
+
+      <!-- 메인 타이틀 -->
+      <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-8">
         궁금한 실무 규정이나 수당 기준을 검색하세요
       </h1>
-      <p class="text-slate-300 text-sm max-w-xl mx-auto">
-        복잡한 법규와 지침을 사업 현장에 바로 적용할 수 있도록<br class="hidden sm:inline"> 구체적인 가상 적용 사례와 함께 직관적으로 정리해 드립니다.
-      </p>
 
-      <!-- Search Box (Argos Style) -->
-      <div class="pt-3 max-w-2xl mx-auto">
-        <div class="relative flex items-center shadow-xl rounded-2xl bg-white overflow-hidden p-1.5 focus-within:ring-4 focus-within:ring-blue-400/50 transition">
-          <div class="pl-3.5 pr-2 text-slate-400 flex items-center">
-            <i data-lucide="search" class="w-5 h-5"></i>
+      <!-- 검색창 컴포넌트 -->
+      <div class="relative max-w-2xl mx-auto">
+        <div class="relative flex items-center shadow-lg shadow-slate-200/70 rounded-2xl overflow-hidden border-2 border-slate-200 focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/10 transition-all bg-white">
+          <div class="pl-5 text-slate-400">
+            <i class="fa-solid fa-magnifying-glass text-lg"></i>
           </div>
           <input 
             type="text" 
-            id="searchInput" 
-            placeholder="예: 심사수당, 출장여비, 2시간 심사, 회의비, 외부강의 등" 
-            class="w-full py-3 px-2 text-slate-800 placeholder-slate-400 text-sm sm:text-base outline-none font-medium"
-            autocomplete="off"
-            onkeypress="if(event.key === 'Enter') handleSearch()"
+            id="search-input" 
+            placeholder="예: 심사수당, 출장여비, 회의비, 2시간 심사, 외부강의 등" 
+            class="w-full py-4 pl-3 pr-28 text-slate-900 placeholder-slate-400 font-medium focus:outline-none text-sm sm:text-base"
           />
           <button 
-            onclick="clearSearch()" 
-            id="clearBtn" 
-            class="hidden p-2 text-slate-400 hover:text-slate-600 transition"
-            title="검색어 지우기">
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-          <button 
-            onclick="handleSearch()" 
-            class="bg-[#1A56DB] hover:bg-[#1546B0] text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition flex items-center gap-1.5 shrink-0 shadow-md">
+            id="search-btn" 
+            class="absolute right-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-sm transition-all shadow-sm flex items-center gap-1.5"
+          >
             검색
           </button>
         </div>
 
-        <!-- Quick Tag Chips -->
-        <div class="flex items-center flex-wrap justify-center gap-2 mt-4 text-xs">
-          <span class="text-blue-200/90 font-medium">자주 찾는 질문 :</span>
-          <button onclick="quickSearch('심사수당')" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full border border-white/20 transition"># 심사수당 (2시간 기준)</button>
-          <button onclick="quickSearch('출장여비')" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full border border-white/20 transition"># 출장여비 (시내/시외)</button>
-          <button onclick="quickSearch('회의비')" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full border border-white/20 transition"># 회의비 (1인 3만원)</button>
-          <button onclick="quickSearch('외부강의')" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full border border-white/20 transition"># 외부강의 신고기준</button>
+        <!-- 빠른 추천 검색 태그 -->
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-4 text-xs font-medium text-slate-500">
+          <span class="font-semibold text-slate-400">자주 찾는 질문:</span>
+          <button class="quick-tag px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors" data-keyword="심사수당"># 심사수당 (2시간 기준)</button>
+          <button class="quick-tag px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors" data-keyword="출장여비"># 출장여비 (시내/시외)</button>
+          <button class="quick-tag px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors" data-keyword="회의비"># 회의비 (1인 3만원)</button>
+          <button class="quick-tag px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors" data-keyword="외부강의"># 외부강의 신고기준</button>
         </div>
       </div>
+
     </div>
   </section>
 
-  <!-- MAIN CONTENT AREA -->
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
-
-    <!-- Active Search Bar / Status -->
-    <div id="searchMeta" class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-2">
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-slate-600">검색결과</span>
-        <span id="resultCountBadge" class="bg-blue-100 text-blue-800 font-bold text-xs px-2.5 py-0.5 rounded-full">5건</span>
-        <span id="searchKeywordLabel" class="text-sm font-semibold text-slate-800">전체 규정 목록</span>
+  <!-- 콘텐츠 영역 (검색 결과 및 규정 목록) -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-10 flex-grow w-full">
+    <!-- 결과 헤더 -->
+    <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200">
+      <div class="flex items-center gap-3">
+        <h2 class="text-base font-bold text-slate-900">검색 결과</h2>
+        <span id="result-count" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-teal-100 text-teal-800">0건</span>
       </div>
-      <div class="flex items-center gap-2 text-xs text-slate-500">
-        <span class="inline-flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5 text-blue-600"></i> 조항 카드를 누르면 원문과 실무 사례가 펼쳐집니다.</span>
-      </div>
-    </div>
-
-    <!-- AIS PRACTICAL BANNER (If specific query like '심사수당' is searched) -->
-    <div id="aisDirectAnswer" class="hidden mb-6 bg-amber-50/90 border border-amber-200 rounded-2xl p-5 shadow-sm">
-      <div class="flex items-start gap-3">
-        <div class="p-2.5 bg-amber-500 text-white rounded-xl shadow-sm shrink-0">
-          <i data-lucide="lightbulb" class="w-5 h-5"></i>
-        </div>
-        <div class="space-y-1.5 flex-1">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <h3 class="font-bold text-amber-950 text-base sm:text-lg flex items-center gap-2">
-              <span>💡 국가법령 AIS 스타일 실무 핵심 가이드</span>
-              <span class="text-xs bg-amber-200/80 text-amber-800 px-2 py-0.5 rounded font-semibold">현장 바로적용</span>
-            </h3>
-            <span class="text-xs text-amber-800/80 font-medium">규정 제8조 (심사수당) 적용 기준</span>
-          </div>
-          <p class="text-sm text-amber-900 leading-relaxed font-medium">
-            심사위원 수당은 <strong class="text-amber-950 underline decoration-amber-400">1일 기본 2시간 이내 100,000원</strong> 지급이 가능하며, 
-            초과 시 매 시간당 50,000원이 가산되어 <strong class="text-red-700">1일 최대 200,000원 한도</strong> 내에서 집행할 수 있습니다.
-          </p>
-          <!-- Quick Simulation Grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 mt-2 border-t border-amber-200/80">
-            <div class="bg-white/80 p-3 rounded-xl border border-amber-200">
-              <span class="text-xs text-slate-500 block">2시간 진행 시</span>
-              <span class="font-bold text-slate-900 text-base">100,000원</span>
-              <span class="text-[11px] text-emerald-700 block mt-0.5">기본 수당 100% 인정</span>
-            </div>
-            <div class="bg-white/80 p-3 rounded-xl border border-amber-200">
-              <span class="text-xs text-slate-500 block">3시간 진행 시</span>
-              <span class="font-bold text-slate-900 text-base">150,000원</span>
-              <span class="text-[11px] text-blue-700 block mt-0.5">기본 10만 + 초과 1시간 5만</span>
-            </div>
-            <div class="bg-white/80 p-3 rounded-xl border border-amber-200">
-              <span class="text-xs text-slate-500 block">4시간 이상 장시간 시</span>
-              <span class="font-bold text-red-600 text-base">200,000원 (상한)</span>
-              <span class="text-[11px] text-red-600 block mt-0.5">1일 한도 20만원 제한</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RULES ACCORDION LIST CONTAINER -->
-    <div id="ruleList" class="space-y-4">
-      <!-- Cards dynamically injected by app.js -->
-    </div>
-
-    <!-- EMPTY STATE -->
-    <div id="noResults" class="hidden text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-slate-300">
-      <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400 mb-3">
-        <i data-lucide="search-x" class="w-6 h-6"></i>
-      </div>
-      <h3 class="text-base font-bold text-slate-800">검색된 규정 조항이 없습니다.</h3>
-      <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-        입력하신 단어가 정확한지 확인하시거나, '심사수당', '여비', '회의비' 등의 핵심 단어로 다시 검색해 보세요.
-      </p>
-      <button onclick="resetSearch()" class="mt-4 px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
-        전체 규정 보기
+      <button id="show-all-btn" class="text-xs font-semibold text-slate-500 hover:text-slate-800 underline">
+        전체 규정 목록 보기
       </button>
     </div>
 
+    <!-- 동적 렌더링 카드 컨테이너 -->
+    <div id="rules-container" class="space-y-4">
+      <!-- JavaScript를 통해 규정 카드가 동적으로 주입됩니다 -->
+    </div>
   </main>
 
-  <!-- CALCULATOR MODAL -->
-  <div id="calcModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
-      <div class="bg-[#0E294B] text-white px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i data-lucide="calculator" class="w-5 h-5 text-blue-300"></i>
-          <h3 class="font-bold text-lg">심사수당 실무 간편 계산기</h3>
-        </div>
-        <button onclick="closeCalcModal()" class="text-slate-300 hover:text-white transition p-1 rounded-lg">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <!-- 간소화된 푸터 (하단 안내 텍스트 완전 제거) -->
+  <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-600">부산광역시사회서비스원</span>
+        <span>규정실무 헬퍼</span>
       </div>
-
-      <div class="p-6 space-y-5 text-slate-700">
-        <div class="text-xs bg-blue-50 text-blue-800 p-3 rounded-xl border border-blue-100 leading-relaxed">
-          📌 사회서비스원 심사수당 지급 기준: <strong>기본 2시간 100,000원</strong> + <strong>초과 시간당 50,000원</strong> (1일 상한 <strong>200,000원</strong>)
-        </div>
-
-        <div class="space-y-3">
-          <label class="block text-sm font-semibold text-slate-800">심사 진행 시간 선택</label>
-          <div class="grid grid-cols-4 gap-2">
-            <button type="button" onclick="setCalcHours(1)" class="calc-btn border py-2.5 rounded-xl font-semibold text-sm hover:border-blue-600 transition" data-hours="1">1시간</button>
-            <button type="button" onclick="setCalcHours(2)" class="calc-btn border py-2.5 rounded-xl font-semibold text-sm hover:border-blue-600 transition" data-hours="2">2시간</button>
-            <button type="button" onclick="setCalcHours(3)" class="calc-btn border py-2.5 rounded-xl font-semibold text-sm hover:border-blue-600 transition" data-hours="3">3시간</button>
-            <button type="button" onclick="setCalcHours(4)" class="calc-btn border py-2.5 rounded-xl font-semibold text-sm hover:border-blue-600 transition" data-hours="4">4시간 이상</button>
-          </div>
-        </div>
-
-        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-slate-500">선택 시간 :</span>
-            <span id="selectedHoursText" class="font-bold text-slate-800">2시간</span>
-          </div>
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-slate-500">계산 세부내역 :</span>
-            <span id="calcFormulaText" class="text-xs text-slate-600">기본 수당 적용 (2시간 이내 100,000원)</span>
-          </div>
-          <div class="border-t border-slate-200 pt-2 flex justify-between items-center">
-            <span class="font-bold text-slate-800">지급 가능 예상 금액 :</span>
-            <span id="calcTotalAmount" class="text-xl font-extrabold text-blue-600">100,000원</span>
-          </div>
-        </div>
-
-        <div class="text-xs text-slate-500 space-y-1">
-          <p>※ 첨부 증빙서류: 심사평가서, 위원 참석대장, 지급조서, 신분증/통장 사본</p>
-          <p>※ 서면 심사의 경우 시간과 관계없이 1건당 50,000원(1일 최대 150,000원) 정액 적용</p>
-        </div>
-      </div>
-
-      <div class="bg-slate-100 px-6 py-3 flex justify-end gap-2 border-t border-slate-200">
-        <button onclick="closeCalcModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition">닫기</button>
-        <button onclick="applyCalcResultToSearch()" class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-sm transition">규정 원문 확인하기</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="bg-slate-900 text-slate-400 text-xs py-8 border-t border-slate-800 mt-12">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div>
-        <p class="font-semibold text-slate-300">사회서비스원 규정 검색 및 실무 가이드 포털</p>
-        <p class="text-slate-500 mt-1">본 시스템은 공공기관 및 사회서비스원 업무 편의를 위해 규정 조항과 실무 적용 시뮬레이션을 제공합니다.</p>
-      </div>
-      <div class="text-right text-slate-500">
-        <p>Vercel + GitHub + Firebase 배포 최적화 버전</p>
-      </div>
+      <p>© Busan Social Service Agency. All rights reserved.</p>
     </div>
   </footer>
 
-  <!-- App Scripts -->
-  <script src="./rules_data.js"></script>
-  <script src="./app.js"></script>
-  <script>
-    lucide.createIcons();
-  </script>
+  <!-- 데이터 및 스크립트 연결 -->
+  <script src="rules_data.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
