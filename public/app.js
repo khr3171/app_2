@@ -1,8 +1,11 @@
-import {publicRequest} from './public-data.js';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let sequence=0,lastResult;
-const request=publicRequest;
+let config,auth,authModule,sequence=0,lastResult;
+async function request(path){
+ const headers={};if(auth?.currentUser)headers.Authorization='Bearer '+await auth.currentUser.getIdToken();
+ const response=await fetch('/api/'+path,{headers});
+ if(!response.ok){let data;try{data=await response.json();}catch{}throw new Error(data?.error||'요청에 실패했습니다.');}return response;
+}
 function modal(title,html){$('#dialog-title').textContent=title;$('#dialog-body').innerHTML=html;$('#dialog').showModal();}
 $('#close-dialog').onclick=()=>$('#dialog').close();
 $('#dialog').addEventListener('click',e=>{if(e.target===$('#dialog'))$('#dialog').close();});
@@ -27,4 +30,4 @@ $('#year').onchange=()=>{if(document.body.classList.contains('has-results'))doSe
 document.addEventListener('click',async e=>{const suggested=e.target.closest('[data-query]');if(suggested){$('#query').value=suggested.dataset.query;$('#clear').hidden=false;doSearch();}const source=e.target.closest('[data-source]');if(source){const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;try{const blob=await(await request('source?id='+encodeURIComponent(source.dataset.source))).blob();const url=URL.createObjectURL(blob);if(tab)tab.location.href=url+(source.dataset.page?'#page='+source.dataset.page:'');else{URL.revokeObjectURL(url);throw new Error('새 창 열기를 허용하고 다시 시도해주세요.');}setTimeout(()=>URL.revokeObjectURL(url),300000);}catch(err){tab?.close();$('#status').textContent=err.message;}}});
 $('#library').onclick=async()=>{try{const data=await(await request('documents')).json();modal('등록 자료 · 추출 현황',`<p class="help">5개 자료의 원문을 검색합니다. ‘학습 완료’는 원문 전체의 검수 완료를 뜻하지 않습니다.</p>${data.documents.map(d=>`<div class="doc-item"><b>${esc(d.name)}</b><br><span class="muted">${d.units}개 페이지/구역 · ${d.characters.toLocaleString()}자<br>${esc(d.extraction)}<br>텍스트가 적은 페이지/구역: ${d.emptyUnits.length}개${d.emptyUnits.length?' · '+esc(d.emptyUnits.join(', ')):''}</span><br><button data-source="${d.id}">등록 원본 열기 ↗</button></div>`).join('')}<div class="help"><h3>추출 검수 상태</h3>${data.quality.notes.map(t=>`<p>${esc(t)}</p>`).join('')}</div>`);}catch(e){modal('등록 자료',`<p class="help">${esc(e.message)}</p>`);}};
 $('#about').onclick=()=>modal('규정사전 이용 안내',`<div class="help"><p>부산광역시사회서비스원 직원의 내부 행정업무를 지원합니다. 내부규정 → 직접 적용·명시적 준용 법령 → 참고자료 순으로 검토하는 것을 원칙으로 합니다.</p><p>현재는 첨부 자료의 원문 검색과 검수된 심사수당 해설을 제공합니다. 생성형 AI 답변 및 모든 법령의 자동 적용 판단 기능은 연결되지 않았습니다.</p><p>직접 적용·명시적 준용 표시는 개별 근거가 검증된 경우에만 사용합니다. 미검증 자료는 참고자료로 표시하며 법령 충돌이 없다고 보장하지 않습니다.</p><p>예산 기준연도는 해당 연도의 지침을 고르는 기능이며, 그 날짜에 유효했던 내부규정을 재구성하는 기능은 아닙니다.</p><p>현재 등록본: 규정집(260929), 2026·2027 예산편성지침, 강사수당·원고료 기준, 사업비 결의서 매뉴얼.</p></div>`);
-const params=new URLSearchParams(location.search);if(params.get('q')){$('#query').value=params.get('q');await doSearch();}
+try{config=await(await request('config')).json();if(!config.local){$('#login').hidden=false;if(config.firebase){const appModule=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js');authModule=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');auth=authModule.getAuth(appModule.initializeApp(config.firebase));await auth.authStateReady();authModule.onAuthStateChanged(auth,user=>{$('#login').textContent=user?'로그아웃':'직원 로그인';});}$('#login').onclick=async()=>{try{if(!auth)throw new Error('Firebase 계정 연결이 필요합니다. 관리자에게 문의해주세요.');if(auth.currentUser){await authModule.signOut(auth);sequence++;$('#results').hidden=true;$('#status').textContent='로그아웃되었습니다.';}else await authModule.signInWithPopup(auth,new authModule.GoogleAuthProvider());}catch(e){$('#status').textContent=e.message;}};}const params=new URLSearchParams(location.search);if(params.get('q')){$('#query').value=params.get('q');$('#year').value=['2026','2027'].includes(params.get('year'))?params.get('year'):'2026';await doSearch();}}catch(e){$('#status').textContent='서버 연결을 확인해주세요. '+e.message;}
