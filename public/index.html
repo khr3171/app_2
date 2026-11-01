@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="부산광역시사회서비스원 직원의 내부 행정업무를 위한 근거 중심 규정사전"><title>규정사전 · 부산광역시사회서비스원</title><link rel="stylesheet" href="/style.css"></head>
 <body>
-<header><a class="brand-small" href="/" aria-label="규정사전 처음으로">규정사전<span>부산광역시사회서비스원</span></a><nav><button id="library">등록 자료</button><span class="pill">개인용 · 로그인 없음</span></nav></header>
+<header><a class="brand-small" href="/" aria-label="규정사전 처음으로">규정사전<span>부산광역시사회서비스원</span></a><nav><button id="library">등록 자료</button><span class="pill">내부 업무용</span><button id="login" hidden>직원 로그인</button></nav></header>
 <main id="main">
 <section class="search-home" aria-label="규정 검색"><div class="identity"><img src="/assets/logo.png" alt="부산광역시사회서비스원" width="320"><div class="eyebrow">BUSAN SOCIAL SERVICE AGENCY</div><h1>업무의 기준을 찾다<span>규정사전</span></h1><p>궁금한 업무, 사서원 규정에서 먼저 찾아보세요.</p></div>
 <form id="search-form" role="search"><div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="query" maxlength="200" placeholder="규정이나 업무를 검색하세요. 예: 심사수당" aria-label="검색어" autocomplete="off" required><button id="clear" type="button" aria-label="검색어 지우기" hidden>×</button><button class="search-submit" type="submit" aria-label="검색">검색 <span>↗</span></button></div><div class="search-options"><span>내부규정 우선 · 원문 근거 제공</span><label>예산 기준연도 <select id="year" aria-label="예산 기준연도"><option value="2026">2026년</option><option value="2027">2027년</option></select></label></div></form>
@@ -10,5 +10,4 @@
 </main>
 <footer><span>부산광역시사회서비스원 <b>규정사전</b></span><span>내부규정 중심으로, 근거는 명확하게.</span><button id="about">이용 안내</button></footer>
 <dialog id="dialog"><div class="dialog-head"><h2 id="dialog-title">등록 자료</h2><button id="close-dialog" aria-label="닫기">×</button></div><div id="dialog-body"></div></dialog>
-<input id="pack-file" type="file" accept=".rulespack,application/json" hidden><p id="import-status" role="status" hidden></p>
 <script type="module" src="/app.js"></script></body></html>
